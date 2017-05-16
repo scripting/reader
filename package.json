@@ -1,9 +1,9 @@
 {
 	"name": "davereader",
-	"description": "JavaScript for feed reading and aggregating.",
+	"description": "Feed reading and aggregating for Node.",
 	"author": "Dave Winer <dave@smallpicture.com>",
 	"license": "MIT",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"main": "davereader.js",
 	"repository": {
 		"type": "git",
@@ -13,5 +13,12 @@
 		"davereader.js"
 		],
 	"dependencies" : {
+		"daveutils": "*",
+		"request": "*",
+		"mime": "*",
+		"md5": "*",
+		"nodejs-websocket": "*",
+		"opmlparser": "*",
+		"feedparser": "*"
 		} 
 	}
