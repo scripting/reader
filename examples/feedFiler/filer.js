@@ -3,7 +3,8 @@ const utils = require ("daveutils");
 const request = require ("request");
 const fs = require ("fs");
 
-var readerDataFolder = "reader_data/";
+const readerDataFolder = "reader_data/";
+const myOutputFolder = "myOutputFolder/";
 
 var config = {
 	flHttpEnabled: false,
@@ -26,56 +27,26 @@ var feeds = [
 	"http://status.aws.amazon.com/rss/ec2-us-east-1.rss",
 	"http://www.aclu.org/blog/feed/",
 	"http://www.bart.gov/news/rss/rss.xml",
+	"http://www.memeorandum.com/feed.xml",
 	"http://code4lib.org/node/feed",
+	"http://www.nytimes.com/pages/technology/index.html?partner=rssnyt",
+	"http://hn.geekity.com/newstories.xml",
 	"http://www.npr.org/rss/rss.php?id=1045"
 	];
 
-function fsSureFilePath (path, callback) { 
-	var splits = path.split ("/");
-	path = ""; //1/8/15 by DW
-	if (splits.length > 0) {
-		function doLevel (levelnum) {
-			if (levelnum < (splits.length - 1)) {
-				path += splits [levelnum] + "/";
-				fs.exists (path, function (flExists) {
-					if (flExists) {
-						doLevel (levelnum + 1);
-						}
-					else {
-						fs.mkdir (path, undefined, function () {
-							doLevel (levelnum + 1);
-							});
-						}
-					});
-				}
-			else {
-				if (callback != undefined) {
-					callback ();
-					}
-				}
-			}
-		doLevel (0);
-		}
-	else {
-		if (callback != undefined) {
-			callback ();
-			}
-		}
-	}
-
 function startup () {
 	config.addToRiverCallback = function (urlfeed, itemFromParser, item) {
-		var f = "outputFolder/" + utils.getDatePath () + utils.padWithZeros (item.id, 4) + ".json", jsontext = utils.jsonStringify (item);
-		fsSureFilePath (f, function () {
-			fs.writeFile (f, jsontext)
+		var f = myOutputFolder + utils.getDatePath () + utils.padWithZeros (item.id, 4) + ".json";
+		utils.sureFilePath (f, function () {
+			fs.writeFile (f, utils.jsonStringify (item))
 			});
 		};
 	function writeFeedsList (callback) {
 		var f = readerDataFolder + "lists/feeds.json", jsontext = utils.jsonStringify (feeds);
-		fsSureFilePath (f, function () {
+		utils.sureFilePath (f, function () {
 			fs.writeFile (f, jsontext, function (err) {
 				if (err) {
-					console.log ("writeListsFile: err.message == " + err.message);
+					console.log ("writeFeedsList: err.message == " + err.message);
 					}
 				else {
 					callback ();
