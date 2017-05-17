@@ -1,5 +1,5 @@
+var reader = require ("davereader"); 
 var fs = require ("fs");
-var feedtools = require ("davereader"); 
 function readConfig (callback) {
 	fs.readFile ("config.json", function (err, data) {
 		var myConfig = new Object ();
@@ -15,6 +15,6 @@ function readConfig (callback) {
 		});
 	}
 readConfig (function (myConfig) {
-	feedtools.init (myConfig, function () {
+	reader.init (myConfig, function () {
 		});
 	});
