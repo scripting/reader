@@ -1,0 +1,11 @@
+{
+	"name": "river5",
+	"description": "Example app.",
+	"author": "Dave Winer <dave@smallpicture.com>",
+	"license": "MIT",
+	"version": "0.4.0",
+	"main": "river5.js",
+	"dependencies" : {
+		"davereader": "*"
+		} 
+	}
