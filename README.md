@@ -1,6 +1,6 @@
 ## davereader package
 
-It's the core of River5, without the top level. Can be used to build all kinds of feed-based apps.
+It's the core of River5, without the top level, released as an NPM package. Can be used to build all kinds of feed-based apps.
 
 ### How to install
 
@@ -17,4 +17,18 @@ I write them all the time, but I always have to start over from the beginning, c
 When I was doing this, I realized I was solving a problem that was already solved, in my River software, but it wasn't configured correctly to make this easy. It was faster just to crib the code and start from scratch.
 
 Finally, I have it set up so that this works. So the beauty in this is in the apps, not the engine. It's a solved problem that can now be used to solve new problems. 
+
+### Hello world
+
+The Hello World app is feedFiler. It simply writes every new story, in JSON, to a calendar-structured folder. Not very useful on its own, but Hello World apps aren't supposed to be useful. ;-)
+
+### Updates
+
+#### v0.5.1 -- 5/17/17 by DW
+
+The version number changed to use the format favored by NPM. There is no way around it if we want to use NPM, and we do. 
+
+Instead of baking the utils package into the project, we require the new daveutils package. 
+
+There's a new optional element in config, config.addToRiverCallback. It's a function that takes three params, the URL of the feed, the internal struct returned by feedparser and a digested version of that data produced by davereader/river5.
 
