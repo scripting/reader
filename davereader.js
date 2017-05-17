@@ -24,7 +24,7 @@ exports.init = init;
 exports.httpRequest = handleHttpRequest; //3/24/17 by DW
 exports.readAllFeedsNow = readAllFeedsNow; //4/18/17 by DW
 
-var myProductName = "River5"; myVersion = "0.5.1";
+var myProductName = "River5"; myVersion = "0.5.2";
 
 var fs = require ("fs");
 var request = require ("request");
