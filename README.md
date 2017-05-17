@@ -20,7 +20,9 @@ Finally, I have it set up so that this works. So the beauty in this is in the ap
 
 ### Hello world
 
-The Hello World app is feedFiler. It simply writes every new story, in JSON, to a calendar-structured folder. Not very useful on its own, but Hello World apps aren't supposed to be useful. ;-)
+The Hello World app is <a href="https://github.com/scripting/reader/tree/master/examples/feedFiler">feedFiler</a>. It simply writes every new story, in JSON, to a calendar-structured folder. 
+
+Not very useful on its own, but Hello World apps aren't supposed to be useful. ;-)
 
 ### Updates
 
