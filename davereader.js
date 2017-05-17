@@ -24,7 +24,7 @@ exports.init = init;
 exports.httpRequest = handleHttpRequest; //3/24/17 by DW
 exports.readAllFeedsNow = readAllFeedsNow; //4/18/17 by DW
 
-var myProductName = "River5"; myVersion = "0.5.2";
+var myProductName = "River5"; myVersion = "0.5.3";
 
 var fs = require ("fs");
 var request = require ("request");
@@ -80,7 +80,7 @@ var config = {
 	notifyListenersCallback: undefined, //3/25/17 by DW
 	statsChangedCallback: undefined, //3/25/17 by DW
 	consoleLogCallback: undefined, //3/28/17 by DW
-	addToRiverCallback: undefined, //5/17/17 by DW
+	newItemCallback: undefined, //5/17/17 by DW
 	
 	flBuildEveryFiveSeconds: false, //3/29/17 by DW
 	
@@ -1519,8 +1519,8 @@ function myRequestCall (url) { //2/11/17 by DW
 		
 		downloadPodcast (item, urlfeed); //4/17/17 by DW
 		
-		if (config.addToRiverCallback !== undefined) { //5/17/17 by DW
-			config.addToRiverCallback (urlfeed, itemFromParser, item);
+		if (config.newItemCallback !== undefined) { //5/17/17 by DW
+			config.newItemCallback (urlfeed, itemFromParser, item);
 			}
 		
 		callAddToRiverCallbacks (urlfeed, itemFromParser, item); //6/19/15 by DW

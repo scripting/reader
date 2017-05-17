@@ -38,5 +38,5 @@ The version number changed to use the format favored by NPM. There is no way aro
 
 Instead of baking the utils package into the project, we require the new daveutils package. 
 
-There's a new optional element in config, config.addToRiverCallback. It's a function that takes three params, the URL of the feed, the internal struct returned by feedparser and a digested version of that data produced by davereader/river5.
+There's a new optional element in config, config.newItemCallback. It's a function that takes three params, the URL of the feed, the internal struct returned by feedparser and a digested version of that data produced by davereader/river5.
 
