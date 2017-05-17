@@ -24,6 +24,12 @@ The Hello World app is <a href="https://github.com/scripting/reader/tree/master/
 
 Not very useful on its own, but Hello World apps aren't supposed to be useful. ;-)
 
+### River5 is a demo app
+
+River5 is even smaller than feedFiler!
+
+It's included as <a href="https://github.com/scripting/reader/tree/master/examples/river5">an example</a>. 
+
 ### Updates
 
 #### v0.5.1 -- 5/17/17 by DW
