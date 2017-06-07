@@ -1,6 +1,5 @@
 const reader = require ("davereader");
 const utils = require ("daveutils");
-const request = require ("request");
 const fs = require ("fs");
 
 const readerDataFolder = "reader_data/";
@@ -33,30 +32,29 @@ var feeds = [
 	"http://hn.geekity.com/newstories.xml",
 	"http://www.npr.org/rss/rss.php?id=1045"
 	];
+function writeFeedsList (callback) { 
+	var f = readerDataFolder + "lists/feeds.json", jsontext = utils.jsonStringify (feeds);
+	utils.sureFilePath (f, function () {
+		fs.writeFile (f, jsontext, function (err) {
+			if (err) {
+				console.log ("writeFeedsList: err.message == " + err.message);
+				}
+			else {
+				callback ();
+				}
+			});
+		});
+	}
 
 function startup () {
-	config.addToRiverCallback = function (urlfeed, itemFromParser, item) {
+	config.newItemCallback = function (urlfeed, itemFromParser, item) { //called for each new item
 		var f = myOutputFolder + utils.getDatePath () + utils.padWithZeros (item.id, 4) + ".json";
 		utils.sureFilePath (f, function () {
 			fs.writeFile (f, utils.jsonStringify (item))
 			});
 		};
-	function writeFeedsList (callback) {
-		var f = readerDataFolder + "lists/feeds.json", jsontext = utils.jsonStringify (feeds);
-		utils.sureFilePath (f, function () {
-			fs.writeFile (f, jsontext, function (err) {
-				if (err) {
-					console.log ("writeFeedsList: err.message == " + err.message);
-					}
-				else {
-					callback ();
-					}
-				});
-			});
-		}
 	writeFeedsList (function () {
-		reader.init (config, function () {
-			});
+		reader.init (config);
 		});
 	}
 startup ();

@@ -24,7 +24,7 @@ exports.init = init;
 exports.httpRequest = handleHttpRequest; //3/24/17 by DW
 exports.readAllFeedsNow = readAllFeedsNow; //4/18/17 by DW
 
-var myProductName = "River5"; myVersion = "0.5.3";
+var myProductName = "River5"; myVersion = "0.5.4";
 
 var fs = require ("fs");
 var request = require ("request");
@@ -84,7 +84,7 @@ var config = {
 	
 	flBuildEveryFiveSeconds: false, //3/29/17 by DW
 	
-	flDownloadPodcasts: true, //4/17/17 by DW
+	flDownloadPodcasts: false, //6/7/17 by DW -- changed to false
 	maxFileNameLength: 32, //4/17/17 by DW
 	maxConcurrentPodcastDownloads: 10 //4/17/17 by DW
 	};

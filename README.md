@@ -32,6 +32,14 @@ It's included as <a href="https://github.com/scripting/reader/tree/master/exampl
 
 ### Updates
 
+#### v0.5.4 -- 6/7/17 by DW
+
+One small change, the default value of config.flDownloadPodcasts changed from true to false. 
+
+Previously a new installation would download podcasts automatically, and this could cause problems because they are such large files. 
+
+Now you have to set this true yourself in config.json.
+
 #### v0.5.1 -- 5/17/17 by DW
 
 The version number changed to use the format favored by NPM. There is no way around it if we want to use NPM, and we do. 
