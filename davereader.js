@@ -24,7 +24,7 @@ exports.init = init;
 exports.httpRequest = handleHttpRequest; //3/24/17 by DW
 exports.readAllFeedsNow = readAllFeedsNow; //4/18/17 by DW
 
-var myProductName = "River5"; myVersion = "0.5.4";
+var myProductName = "River5"; myVersion = "0.5.5";
 
 var fs = require ("fs");
 var request = require ("request");
@@ -138,25 +138,28 @@ var serverStats = {
 var flStatsChanged = false;
 var flEveryMinuteScheduled = false;
 var lastEveryMinuteHour = -1;
-var origAppModDate = new Date (0);
 var whenServerStart = new Date ();
+var origAppModDate = new Date (0);
 
-function myConsoleLog (s) { //3/28/17 by DW
-	if (config.consoleLogCallback !== undefined) {
-		config.consoleLogCallback (s);
-		}
-	console.log (s);
-	}
-function myRequestCall (url) { //2/11/17 by DW
+function getRequestOptions (urlToRequest) {
 	var options = {
-		url: url,
+		url: urlToRequest,
 		jar: true,
 		maxRedirects: 5,
 		headers: {
 			"User-Agent": myProductName + " v" + myVersion
 			}
 		};
-	return (request (options));
+	return (options);
+	}
+function myRequestCall (url) { //2/11/17 by DW
+	return (request (getRequestOptions (url)));
+	}
+function myConsoleLog (s) { //3/28/17 by DW
+	if (config.consoleLogCallback !== undefined) {
+		config.consoleLogCallback (s);
+		}
+	console.log (s);
 	}
 
 //files
@@ -576,15 +579,161 @@ function myRequestCall (url) { //2/11/17 by DW
 				feed.stats.ctSecsLastRead = utils.secondsSince (starttime);
 				writeFeedInfoFile (feed);
 				}
-			function feedError () {
+			function feedError (message) {
 				feed.stats.ctReadErrors++;
 				feed.stats.ctConsecutiveReadErrors++;
 				feed.stats.whenLastReadError = starttime;
+				if (message !== undefined) {
+					feed.stats.lastReadError = message;
+					}
 				writeFeed ();
 				
 				feedstats.ctReadErrors++;
 				feedstats.ctConsecutiveReadErrors++;
 				feedstats.whenLastReadError = starttime;
+				}
+			function processFeedItem (item) {
+				if (new Date (item.pubDate) > new Date (feed.stats.mostRecentPubDate)) {
+					feed.stats.mostRecentPubDate = item.pubDate;
+					feedstats.mostRecentPubDate = item.pubDate;
+					}
+				
+				//set flnew -- do the history thing
+					var theGuid = getItemGuid (item);
+					itemsInFeed [theGuid] = true; //6/3/15 by DW
+					flnew = true;
+					for (var i = 0; i < feed.history.length; i++) {
+						if (feed.history [i].guid == theGuid) { //we've already seen it
+							flnew = false;
+							break;
+							}
+						}
+				if (flnew) { //add to the history array
+					var obj = new Object (), flAddToRiver = true;
+					obj.title = item.title; 
+					obj.link = item.link; 
+					obj.description = getItemDescription (item);
+					obj.guid = theGuid;
+					obj.when = starttime;
+					feed.history [feed.history.length] = obj;
+					
+					//stats
+						feed.stats.ctItems++;
+						feed.stats.whenLastNewItem = starttime;
+						
+						feedstats.ctItems++;
+						feedstats.whenLastNewItem = starttime;
+						
+					
+					//copy feed info from item into the feed record -- 6/1/14 by DW
+						feed.feedInfo.title = item.meta.title;
+						feed.feedInfo.link = item.meta.link;
+						feed.feedInfo.description = item.meta.description;
+					//copy cloud info, if present -- 6/3/15 by DW
+						if (item.meta.cloud !== undefined) {
+							if (item.meta.cloud.domain !== undefined) {
+								feed.feedInfo.cloud = {
+									domain: item.meta.cloud.domain,
+									port: item.meta.cloud.port,
+									path: item.meta.cloud.path,
+									port: item.meta.cloud.port,
+									registerProcedure: item.meta.cloud.registerprocedure,
+									protocol: item.meta.cloud.protocol
+									};
+								feedstats.cloud = {
+									domain: item.meta.cloud.domain,
+									port: item.meta.cloud.port,
+									path: item.meta.cloud.path,
+									port: item.meta.cloud.port,
+									registerProcedure: item.meta.cloud.registerprocedure,
+									protocol: item.meta.cloud.protocol,
+									};
+								}
+							}
+					//copy feeds info from item into feeds in-memory array element -- 6/1/14 by DW
+						feedstats.title = item.meta.title;
+						feedstats.text = item.meta.title;
+						feedstats.htmlurl = item.meta.link;
+						feedstats.description = item.meta.description;
+						flFeedsArrayChanged = true;
+					
+					//exclude items that newly appear in feed but have a too-old pubdate
+						if ((item.pubDate != null) && (new Date (item.pubDate) < utils.dateYesterday (feed.stats.mostRecentPubDate)) && (!flFirstRead)) { 
+							flAddToRiver = false;
+							feed.stats.ctItemsTooOld++;
+							feed.stats.whenLastTooOldItem = starttime;
+							}
+					
+					if (flFirstRead) {
+						if (config.flAddItemsFromNewSubs) {
+							flAddToRiver = true;
+							}
+						else {
+							flAddToRiver = false;
+							}
+						}
+					
+					if (flAddToRiver) {
+						addToRiver (urlfeed, item);
+						if (config.flWriteItemsToFiles) {
+							var relpath = getFolderForFeed (urlfeed) + "items/" + utils.padWithZeros (feed.stats.itemSerialnum++, 3) + ".json";
+							pushFileWriteQueue (relpath, utils.jsonStringify (item, true))
+							}
+						}
+					}
+				}
+			function finishFeedProcessing () {
+				//delete items in the history array that are no longer in the feed -- 6/3/15 by DW
+					var ctHistoryItemsDeleted = 0;
+					for (var i = feed.history.length - 1; i >= 0; i--) { //6/3/15 by DW
+						if (itemsInFeed [feed.history [i].guid] === undefined) { //it's no longer in the feed
+							feed.history.splice (i, 1);
+							ctHistoryItemsDeleted++;
+							}
+						}
+					
+				writeFeed ();
+				if (callback !== undefined) { //6/5/15 by DW
+					callback ();
+					}
+				}
+			function readJsonFeed (urlfeed, callback) {
+				request (getRequestOptions (urlfeed), function (err, response, body) {
+					if (err) {
+						feedError (err.message);
+						}
+					else {
+						if (response.statusCode !== 200) {
+							feedError ("readJsonFeed: response.statusCode == " + response.statusCode);
+							}
+						else {
+							try {
+								var jstruct = JSON.parse (body);
+								var items = jstruct.rss.channel.item;
+								for (var i = 0; i < items.length; i++) {
+									var item = items [i];
+									if (item.title === undefined) {
+										item.title = null;
+										}
+									item.meta = {
+										title: jstruct.rss.channel.title,
+										link: jstruct.rss.channel.link,
+										description: jstruct.rss.channel.description,
+										cloud: jstruct.rss.channel.cloud
+										};
+									processFeedItem (item);
+									}
+								finishFeedProcessing ();
+								}
+							catch (err) {
+								feedError ("readJsonFeed: err.message == " + err.message);
+								}
+							}
+						}
+					if (callback !== undefined) {
+						callback ();
+						}
+					});
 				}
 			if (feed.prefs.enabled) {
 				var flFirstRead = feed.stats.ctReads == 0, feedstats;
@@ -611,136 +760,42 @@ function myRequestCall (url) { //2/11/17 by DW
 					urlfeed = "http://" + utils.stringDelete (urlfeed, 1, 7);
 					}
 				
-				var req = myRequestCall (urlfeed);
-				var feedparser = new FeedParser ();
-				req.on ("response", function (res) {
-					var stream = this;
-					if (res.statusCode == 200) {
-						stream.pipe (feedparser);
-						}
-					else {
+				if (utils.endsWith (urlfeed, ".json")) { //6/13/17 by DW
+					readJsonFeed (urlfeed);
+					}
+				else {
+					var req = myRequestCall (urlfeed);
+					var feedparser = new FeedParser ();
+					req.on ("response", function (res) {
+						var stream = this;
+						if (res.statusCode == 200) {
+							stream.pipe (feedparser);
+							}
+						else {
+							feedError ("readFeed: res.statusCode == " + res.statusCode);
+							}
+						});
+					req.on ("error", function (res) {
 						feedError ();
-						}
-					});
-				req.on ("error", function (res) {
-					feedError ();
-					});
-				feedparser.on ("readable", function () {
-					try {
-						var item = this.read (), flnew;
-						if (item !== null) { //2/9/17 by DW
-							if (new Date (item.pubDate) > new Date (feed.stats.mostRecentPubDate)) {
-								feed.stats.mostRecentPubDate = item.pubDate;
-								feedstats.mostRecentPubDate = item.pubDate;
-								}
-							
-							//set flnew -- do the history thing
-								var theGuid = getItemGuid (item);
-								itemsInFeed [theGuid] = true; //6/3/15 by DW
-								flnew = true;
-								for (var i = 0; i < feed.history.length; i++) {
-									if (feed.history [i].guid == theGuid) { //we've already seen it
-										flnew = false;
-										break;
-										}
-									}
-							if (flnew) { //add to the history array
-								var obj = new Object (), flAddToRiver = true;
-								obj.title = item.title; 
-								obj.link = item.link; 
-								obj.description = getItemDescription (item);
-								obj.guid = theGuid;
-								obj.when = starttime;
-								feed.history [feed.history.length] = obj;
-								
-								//stats
-									feed.stats.ctItems++;
-									feed.stats.whenLastNewItem = starttime;
-									
-									feedstats.ctItems++;
-									feedstats.whenLastNewItem = starttime;
-									
-								
-								//copy feed info from item into the feed record -- 6/1/14 by DW
-									feed.feedInfo.title = item.meta.title;
-									feed.feedInfo.link = item.meta.link;
-									feed.feedInfo.description = item.meta.description;
-								//copy cloud info, if present -- 6/3/15 by DW
-									if (item.meta.cloud !== undefined) {
-										if (item.meta.cloud.domain !== undefined) {
-											feed.feedInfo.cloud = {
-												domain: item.meta.cloud.domain,
-												port: item.meta.cloud.port,
-												path: item.meta.cloud.path,
-												port: item.meta.cloud.port,
-												registerProcedure: item.meta.cloud.registerprocedure,
-												protocol: item.meta.cloud.protocol
-												};
-											feedstats.cloud = {
-												domain: item.meta.cloud.domain,
-												port: item.meta.cloud.port,
-												path: item.meta.cloud.path,
-												port: item.meta.cloud.port,
-												registerProcedure: item.meta.cloud.registerprocedure,
-												protocol: item.meta.cloud.protocol,
-												};
-											}
-										}
-								//copy feeds info from item into feeds in-memory array element -- 6/1/14 by DW
-									feedstats.title = item.meta.title;
-									feedstats.text = item.meta.title;
-									feedstats.htmlurl = item.meta.link;
-									feedstats.description = item.meta.description;
-									flFeedsArrayChanged = true;
-								
-								//exclude items that newly appear in feed but have a too-old pubdate
-									if ((item.pubDate != null) && (new Date (item.pubDate) < utils.dateYesterday (feed.stats.mostRecentPubDate)) && (!flFirstRead)) { 
-										flAddToRiver = false;
-										feed.stats.ctItemsTooOld++;
-										feed.stats.whenLastTooOldItem = starttime;
-										}
-								
-								if (flFirstRead) {
-									if (config.flAddItemsFromNewSubs) {
-										flAddToRiver = true;
-										}
-									else {
-										flAddToRiver = false;
-										}
-									}
-								
-								if (flAddToRiver) {
-									addToRiver (urlfeed, item);
-									if (config.flWriteItemsToFiles) {
-										var relpath = getFolderForFeed (urlfeed) + "items/" + utils.padWithZeros (feed.stats.itemSerialnum++, 3) + ".json";
-										pushFileWriteQueue (relpath, utils.jsonStringify (item, true))
-										}
-									}
+						});
+					feedparser.on ("readable", function () {
+						try {
+							var item = this.read (), flnew;
+							if (item !== null) { //2/9/17 by DW
+								processFeedItem (item);
 								}
 							}
-						}
-					catch (err) {
-						myConsoleLog ("readFeed: error == " + err.message);
-						}
-					});
-				feedparser.on ("error", function () {
-					feedError ();
-					});
-				feedparser.on ("end", function () {
-					//delete items in the history array that are no longer in the feed -- 6/3/15 by DW
-						var ctHistoryItemsDeleted = 0;
-						for (var i = feed.history.length - 1; i >= 0; i--) { //6/3/15 by DW
-							if (itemsInFeed [feed.history [i].guid] === undefined) { //it's no longer in the feed
-								feed.history.splice (i, 1);
-								ctHistoryItemsDeleted++;
-								}
+						catch (err) {
+							myConsoleLog ("readFeed: error == " + err.message);
 							}
-						
-					writeFeed ();
-					if (callback !== undefined) { //6/5/15 by DW
-						callback ();
-						}
-					});
+						});
+					feedparser.on ("error", function () {
+						feedError ();
+						});
+					feedparser.on ("end", function () {
+						finishFeedProcessing ();
+						});
+					}
 				}
 			});
 		}

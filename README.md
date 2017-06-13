@@ -32,6 +32,10 @@ It's included as <a href="https://github.com/scripting/reader/tree/master/exampl
 
 ### Updates
 
+#### v0.5.5 -- 6/13/17 by DW
+
+New support for <a href="https://github.com/scripting/Scripting-News/blob/master/rss-in-json/README.md">RSS-in-JSON</a> feeds. 
+
 #### v0.5.4 -- 6/7/17 by DW
 
 One small change, the default value of config.flDownloadPodcasts changed from true to false. 
