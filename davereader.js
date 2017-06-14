@@ -24,7 +24,7 @@ exports.init = init;
 exports.httpRequest = handleHttpRequest; //3/24/17 by DW
 exports.readAllFeedsNow = readAllFeedsNow; //4/18/17 by DW
 
-var myProductName = "River5"; myVersion = "0.5.5";
+var myProductName = "River5"; myVersion = "0.5.6";
 
 var fs = require ("fs");
 var request = require ("request");
@@ -721,6 +721,11 @@ function myConsoleLog (s) { //3/28/17 by DW
 										description: jstruct.rss.channel.description,
 										cloud: jstruct.rss.channel.cloud
 										};
+									
+									if (item ["source:outline"] !== undefined) { //it's already in the correct format for addToRiver, no conversion needed
+										item.outline = item ["source:outline"];
+										}
+									
 									processFeedItem (item);
 									}
 								finishFeedProcessing ();
@@ -1536,9 +1541,14 @@ function myConsoleLog (s) { //3/28/17 by DW
 				if (itemFromParser.enclosures != undefined) { //it's an array, we want the first one
 					item.enclosure = itemFromParser.enclosures [0];
 					}
-			//source:outline -- 7/16/14 by DW
-				if (itemFromParser ["source:outline"] != undefined) { //they're using a cool feature! :-)
-					item.outline = newConvertOutline (itemFromParser ["source:outline"]);
+			//outline -- 6/14/17 by DW
+				if (itemFromParser.outline !== undefined) {
+					item.outline = itemFromParser.outline;
+					}
+				else {
+					if (itemFromParser ["source:outline"] != undefined) { 
+						item.outline = newConvertOutline (itemFromParser ["source:outline"]);
+						}
 					}
 			item.pubdate = getDate (itemFromParser.pubDate);
 			item.comments = getString (itemFromParser.comments);
