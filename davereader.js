@@ -24,7 +24,7 @@ exports.init = init;
 exports.httpRequest = handleHttpRequest; //3/24/17 by DW
 exports.readAllFeedsNow = readAllFeedsNow; //4/18/17 by DW
 
-var myProductName = "River5"; myVersion = "0.5.6";
+var myProductName = "River5"; myVersion = "0.5.7";
 
 var fs = require ("fs");
 var request = require ("request");
@@ -1815,10 +1815,11 @@ function myConsoleLog (s) { //3/28/17 by DW
 		flFeedsArrayChanged = true; //because we modified feedstats
 		
 		request (theRequest, function (err, response, body) {
-			function recordErrorStats () {
+			function recordErrorStats (message) {
 				feedstats.ctCloudRenewErrors++; //counts the number of communication errors
 				feedstats.ctConsecutiveCloudRenewErrors++;
 				feedstats.whenLastCloudRenewError = now;
+				feedstats.lastCloudRenewError = message;
 				flFeedsArrayChanged = true; 
 				}
 			try {
@@ -1836,7 +1837,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 					}
 				
 				if (flskip) {
-					recordErrorStats ();
+					recordErrorStats (err.message);
 					}
 				else {
 					feedstats.ctConsecutiveCloudRenewErrors = 0;
@@ -1849,7 +1850,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 				}
 			catch (err) {
 				myConsoleLog ("pleaseNotify: urlFeed == " + urlFeed + ", err.message == " + err.message);
-				recordErrorStats ();
+				recordErrorStats (err.message);
 				}
 			});
 		}
