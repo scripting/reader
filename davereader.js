@@ -24,7 +24,7 @@ exports.init = init;
 exports.httpRequest = handleHttpRequest; //3/24/17 by DW
 exports.readAllFeedsNow = readAllFeedsNow; //4/18/17 by DW
 
-var myProductName = "River5"; myVersion = "0.5.7";
+var myProductName = "River5"; myVersion = "0.5.11";
 
 var fs = require ("fs");
 var request = require ("request");
@@ -598,6 +598,28 @@ function myConsoleLog (s) { //3/28/17 by DW
 					feedstats.mostRecentPubDate = item.pubDate;
 					}
 				
+				//copy cloud info, if present -- 6/3/15 by DW
+					if (item.meta.cloud !== undefined) {
+						if (item.meta.cloud.domain !== undefined) {
+							feed.feedInfo.cloud = {
+								domain: item.meta.cloud.domain,
+								port: item.meta.cloud.port,
+								path: item.meta.cloud.path,
+								port: item.meta.cloud.port,
+								registerProcedure: item.meta.cloud.registerprocedure,
+								protocol: item.meta.cloud.protocol
+								};
+							feedstats.cloud = {
+								domain: item.meta.cloud.domain,
+								port: item.meta.cloud.port,
+								path: item.meta.cloud.path,
+								port: item.meta.cloud.port,
+								registerProcedure: item.meta.cloud.registerprocedure,
+								protocol: item.meta.cloud.protocol,
+								};
+							}
+						}
+				
 				//set flnew -- do the history thing
 					var theGuid = getItemGuid (item);
 					itemsInFeed [theGuid] = true; //6/3/15 by DW
@@ -629,27 +651,6 @@ function myConsoleLog (s) { //3/28/17 by DW
 						feed.feedInfo.title = item.meta.title;
 						feed.feedInfo.link = item.meta.link;
 						feed.feedInfo.description = item.meta.description;
-					//copy cloud info, if present -- 6/3/15 by DW
-						if (item.meta.cloud !== undefined) {
-							if (item.meta.cloud.domain !== undefined) {
-								feed.feedInfo.cloud = {
-									domain: item.meta.cloud.domain,
-									port: item.meta.cloud.port,
-									path: item.meta.cloud.path,
-									port: item.meta.cloud.port,
-									registerProcedure: item.meta.cloud.registerprocedure,
-									protocol: item.meta.cloud.protocol
-									};
-								feedstats.cloud = {
-									domain: item.meta.cloud.domain,
-									port: item.meta.cloud.port,
-									path: item.meta.cloud.path,
-									port: item.meta.cloud.port,
-									registerProcedure: item.meta.cloud.registerprocedure,
-									protocol: item.meta.cloud.protocol,
-									};
-								}
-							}
 					//copy feeds info from item into feeds in-memory array element -- 6/1/14 by DW
 						feedstats.title = item.meta.title;
 						feedstats.text = item.meta.title;
@@ -1810,6 +1811,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 				}
 			};
 		
+		myConsoleLog ("pleaseNotify: urlFeed == " + urlFeed);
 		feedstats.whenLastCloudRenew = now;
 		feedstats.ctCloudRenew++;
 		flFeedsArrayChanged = true; //because we modified feedstats
@@ -1826,13 +1828,17 @@ function myConsoleLog (s) { //3/28/17 by DW
 				var flskip = false;
 				
 				if (err) {
-					myConsoleLog ("pleaseNotify: urlFeed == " + urlFeed + ", err.message == " + err.message + ".");
 					flskip = true;
+					if (callback) {
+						callback (err.message);
+						}
 					}
 				else {
 					if (!body.success) {
-						myConsoleLog ("pleaseNotify: urlFeed == " + urlFeed + ", body.msg == " + body.msg + ".");
 						flskip = true;
+						if (callback) {
+							callback (body.msg);
+							}
 						}
 					}
 				
@@ -1842,15 +1848,16 @@ function myConsoleLog (s) { //3/28/17 by DW
 				else {
 					feedstats.ctConsecutiveCloudRenewErrors = 0;
 					flFeedsArrayChanged = true; //because we modified feedstats
-					myConsoleLog ("pleaseNotify: " + urlFeed);
 					if (callback) {
-						callback ();
+						callback ("It worked.");
 						}
 					}
 				}
 			catch (err) {
-				myConsoleLog ("pleaseNotify: urlFeed == " + urlFeed + ", err.message == " + err.message);
 				recordErrorStats (err.message);
+				if (callback) {
+					callback (err.message);
+					}
 				}
 			});
 		}
@@ -1888,6 +1895,22 @@ function myConsoleLog (s) { //3/28/17 by DW
 			flStatsChanged = true;
 			myConsoleLog ("\nrssCloudFeedUpdated: " + urlFeed);
 			readFeed (urlFeed, function () {
+				});
+			}
+		}
+	function renewThisFeedNow (urlFeed, callback) { //6/14/17 by DW
+		var theFeed = findInFeedsArray (urlFeed); 
+		if (theFeed.cloud === undefined) {
+			if (callback !== undefined) {
+				callback ("Can't renew the subscription because the feed, \"" + urlFeed + "\" is not cloud-aware.");
+				}
+			}
+		else {
+			var urlCloudServer = "http://" + theFeed.cloud.domain + ":" + theFeed.cloud.port + theFeed.cloud.path;
+			pleaseNotify (urlCloudServer, undefined, config.httpPort, "/feedupdated", theFeed.url, theFeed, function (message) {
+				if (callback !== undefined) {
+					callback ("We sent the request to " + urlCloudServer + ".");
+					}
 				});
 			}
 		}
@@ -2392,6 +2415,12 @@ function myConsoleLog (s) { //3/28/17 by DW
 							myConsoleLog ("/feedupdated: challenge == " + challenge);
 							httpResponse.writeHead (200, {"Content-Type": "text/plain"});
 							httpResponse.end (challenge);    
+							break;
+						case "/renewfeed": //6/14/17 by DW
+							var url = parsedUrl.query.url;
+							renewThisFeedNow (parsedUrl.query.url, function (message) {
+								returnText (message);
+								});
 							break;
 						case "/favicon.ico": //7/19/15 by DW
 							returnRedirect (config.urlFavicon);
