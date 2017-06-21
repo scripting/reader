@@ -32,6 +32,12 @@ It's included as <a href="https://github.com/scripting/reader/tree/master/exampl
 
 ### Updates
 
+#### v0.5.12 -- 6/21/17 by DW
+
+New callbacks for handling an HTTP request (the host application can override), callbacks that are called every second and every minute. 
+
+Exposed the davereader function that sends a webSockets message to all registered listeners.
+
 #### v0.5.5 -- 6/13/17 by DW
 
 New support for <a href="https://github.com/scripting/Scripting-News/blob/master/rss-in-json/README.md">RSS-in-JSON</a> feeds. 

@@ -23,8 +23,9 @@
 exports.init = init;
 exports.httpRequest = handleHttpRequest; //3/24/17 by DW
 exports.readAllFeedsNow = readAllFeedsNow; //4/18/17 by DW
+exports.notifyWebSocketListeners = notifyWebSocketListeners; //6/20/17 by DW
 
-var myProductName = "River5"; myVersion = "0.5.11";
+var myProductName = "River5"; myVersion = "0.5.12";
 
 var fs = require ("fs");
 var request = require ("request");
@@ -81,6 +82,9 @@ var config = {
 	statsChangedCallback: undefined, //3/25/17 by DW
 	consoleLogCallback: undefined, //3/28/17 by DW
 	newItemCallback: undefined, //5/17/17 by DW
+	handleHttpRequestCallback: undefined, //6/20/17 by DW
+	everyMinuteCallback: undefined, //6/20/17 by DW
+	everySecondCallback: undefined, //6/20/17 by DW
 	
 	flBuildEveryFiveSeconds: false, //3/29/17 by DW
 	
@@ -2202,6 +2206,10 @@ function myConsoleLog (s) { //3/28/17 by DW
 		return (utils.jsonStringify (theCopy));
 		}
 	function handleHttpRequest (httpRequest, httpResponse) {
+		function doHttpReturn (code, type, val) {
+			httpResponse.writeHead (code, {"Content-Type": type});
+			httpResponse.end (val.toString ());    
+			}
 		function returnHtml (htmltext) {
 			httpResponse.writeHead (200, {"Content-Type": "text/html"});
 			httpResponse.end (htmltext);    
@@ -2277,28 +2285,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 				});
 			
 			}
-		try {
-			var parsedUrl = urlpack.parse (httpRequest.url, true), now = new Date (), startTime = now;
-			var lowerpath = parsedUrl.pathname.toLowerCase (), host, port = 80, flLocalRequest = false;
-			
-			//set host, port, flLocalRequest
-				host = httpRequest.headers.host;
-				if (utils.stringContains (host, ":")) {
-					port = utils.stringNthField (host, ":", 2);
-					host = utils.stringNthField (host, ":", 1);
-					}
-				flLocalRequest = utils.beginsWith (host, "localhost");
-			//show the request on the console
-				var localstring = "";
-				if (flLocalRequest) {
-					localstring = "* ";
-					}
-				myConsoleLog (localstring + httpRequest.method + " " + host + ":" + port + " " + lowerpath);
-			
-			//stats
-				serverStats.ctHits++;
-				serverStats.ctHitsToday++;
-				serverStats.ctHitsThisRun++;
+		function handleRequestLocally () {
 			switch (httpRequest.method) {
 				case "GET":
 					switch (lowerpath) {
@@ -2503,6 +2490,59 @@ function myConsoleLog (s) { //3/28/17 by DW
 					break;
 				}
 			}
+		try {
+			var parsedUrl = urlpack.parse (httpRequest.url, true), now = new Date (), startTime = now;
+			var lowerpath = parsedUrl.pathname.toLowerCase (), host, port = 80, flLocalRequest = false;
+			
+			//set host, port, flLocalRequest
+				host = httpRequest.headers.host;
+				if (utils.stringContains (host, ":")) {
+					port = utils.stringNthField (host, ":", 2);
+					host = utils.stringNthField (host, ":", 1);
+					}
+				flLocalRequest = utils.beginsWith (host, "localhost");
+			//show the request on the console
+				var localstring = "";
+				if (flLocalRequest) {
+					localstring = "* ";
+					}
+				myConsoleLog (localstring + httpRequest.method + " " + host + ":" + port + " " + lowerpath);
+			
+			//stats
+				serverStats.ctHits++;
+				serverStats.ctHitsToday++;
+				serverStats.ctHitsThisRun++;
+			
+			if (config.handleHttpRequestCallback !== undefined) {
+				var myRequest = { //bundle things up for the callback
+					method: httpRequest.method,
+					path: parsedUrl.pathname,
+					lowerpath: lowerpath,
+					params: {},
+					host: host,
+					lowerhost: host.toLowerCase (),
+					port: port,
+					referrer: undefined,
+					flLocalRequest: flLocalRequest,
+					client: httpRequest.connection.remoteAddress,
+					now: new Date (),
+					sysRequest: httpRequest,
+					sysResponse: httpResponse,
+					httpReturn: doHttpReturn
+					};
+				for (var x in parsedUrl.query) {
+					myRequest.params [x] = parsedUrl.query [x];
+					}
+				config.handleHttpRequestCallback (myRequest, function (flConsumed) {
+					if (!flConsumed) {
+						handleRequestLocally ();
+						}
+					});
+				}
+			else {
+				handleRequestLocally ();
+				}
+			}
 		catch (tryError) {
 			httpResponse.writeHead (503, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 			httpResponse.end (tryError.message);    
@@ -2565,6 +2605,9 @@ function myConsoleLog (s) { //3/28/17 by DW
 					}
 				checkPodcastQueue (); //4/18/17 by DW
 				}
+			if (config.everySecondCallback !== undefined) { //6/20/17 by DW
+				config.everySecondCallback ();
+				}
 			}
 		if (config.flWatchAppDateChange) { 
 			utils.getFileModDate (config.fnameApp, function (theModDate) {
@@ -2608,6 +2651,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 			
 			myConsoleLog ("\n" + myProductName + " v" + myVersion + ": " + now.toLocaleTimeString () + ", " + feedsArray.length + " feeds, " + serverStats.ctFeedReadsThisRun + " reads, " + serverStats.ctStoriesAddedThisRun + " stories, " + ctsockets + portmsg + ".");
 			}
+		
 		if (config.enabled) {
 			buildChangedRivers (function () {
 				doConsoleMessage ();
@@ -2624,6 +2668,10 @@ function myConsoleLog (s) { //3/28/17 by DW
 			}
 		else {
 			doConsoleMessage ();
+			}
+		
+		if (config.everyMinuteCallback !== undefined) { //6/20/17 by DW
+			config.everyMinuteCallback ();
 			}
 		}
 
