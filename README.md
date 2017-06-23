@@ -58,3 +58,7 @@ Instead of baking the utils package into the project, we require the new daveuti
 
 There's a new optional element in config, config.newItemCallback. It's a function that takes three params, the URL of the feed, the internal struct returned by feedparser and a digested version of that data produced by davereader/river5.
 
+### Questions, support
+
+If you have questions or need help, post an <a href="https://github.com/scripting/river5/issues">Issue</a> on the River5 site (historically that's where this work is done) or on the River5 <a href="https://groups.google.com/forum/#!forum/river5">mail list</a>. 
+
