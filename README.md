@@ -32,6 +32,10 @@ It's included as <a href="https://github.com/scripting/reader/tree/master/exampl
 
 ### Updates
 
+#### v0.5.15 -- 6/25/17 by DW
+
+HTTP requests made by davereader now accept zip compression. 
+
 #### v0.5.12 -- 6/21/17 by DW
 
 New callbacks for handling an HTTP request (the host application can override), callbacks that are called every second and every minute. 

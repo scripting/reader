@@ -25,7 +25,7 @@ exports.httpRequest = handleHttpRequest; //3/24/17 by DW
 exports.readAllFeedsNow = readAllFeedsNow; //4/18/17 by DW
 exports.notifyWebSocketListeners = notifyWebSocketListeners; //6/20/17 by DW
 
-var myProductName = "River5"; myVersion = "0.5.12";
+var myProductName = "River5"; myVersion = "0.5.15";
 
 var fs = require ("fs");
 var request = require ("request");
@@ -149,6 +149,7 @@ function getRequestOptions (urlToRequest) {
 	var options = {
 		url: urlToRequest,
 		jar: true,
+		gzip: true, //6/25/17 by DW
 		maxRedirects: 5,
 		headers: {
 			"User-Agent": myProductName + " v" + myVersion
