@@ -25,7 +25,7 @@ exports.httpRequest = handleHttpRequest; //3/24/17 by DW
 exports.readAllFeedsNow = readAllFeedsNow; //4/18/17 by DW
 exports.notifyWebSocketListeners = notifyWebSocketListeners; //6/20/17 by DW
 
-var myProductName = "River5"; myVersion = "0.5.15";
+var myProductName = "River5"; myVersion = "0.5.16";
 
 var fs = require ("fs");
 var request = require ("request");
@@ -90,7 +90,9 @@ var config = {
 	
 	flDownloadPodcasts: false, //6/7/17 by DW -- changed to false
 	maxFileNameLength: 32, //4/17/17 by DW
-	maxConcurrentPodcastDownloads: 10 //4/17/17 by DW
+	maxConcurrentPodcastDownloads: 10, //4/17/17 by DW
+	
+	flSaveFeedRivers: true //6/29/17 by DW
 	};
 var serverStats = {
 	aggregator: myProductName + " v" + myVersion,
@@ -1400,6 +1402,124 @@ function myConsoleLog (s) { //3/28/17 by DW
 		}
 	
 	
+
+
+//keep a river for each feed -- 6/29/17 by DW
+	var allTheFeedRivers = new Object (); 
+	
+	function readRiverData (f, callback) {
+		readFile (f, function (data) {
+			var jstruct = {
+				ctItemsAdded: 0,
+				whenLastItemAdded: new Date (0),
+				ctSaves: 0,
+				whenLastSave: new Date (0),
+				flDirty: true,
+				ctRiverBuilds: 0,
+				whenLastRiverBuild: new Date (0),
+				items: new Array ()
+				};
+			if (data !== undefined) {
+				try {
+					jstruct = JSON.parse (data.toString ());
+					}
+				catch (err) {
+					}
+				}
+			initRiverData (jstruct);
+			if (callback !== undefined) {
+				callback (jstruct);
+				}
+			});
+		}
+	function getFeedRiver (urlfeed, callback) {
+		if (allTheFeedRivers [urlfeed] !== undefined) {
+			var theRiver = allTheFeedRivers [urlfeed];
+			theRiver.ctAccesses++;
+			theRiver.whenLastAccess = new Date ();
+			callback (theRiver.jstruct);
+			}
+		else {
+			var f = getFolderForFeed (urlfeed) + "feedRiver.json";
+			console.log ("\ngetFeedRiver: f == " + f);
+			readRiverData (f, function (jstruct) {
+				allTheFeedRivers [urlfeed] = {
+					f: f,
+					whenLastAccess: new Date (),
+					ctAccesses: 1,
+					flChanged: true,
+					jstruct: jstruct
+					};
+				callback (jstruct);
+				});
+			}
+		}
+	function addItemToFeedRiver (urlfeed, item) {
+		if (config.flSaveFeedRivers) {
+			getFeedRiver (urlfeed, function (jstruct) {
+				jstruct.items.push (item);
+				if (jstruct.items.length > config.maxRiverItems) {
+					jstruct.items.shift ();
+					}
+				jstruct.ctItemsAdded++;
+				jstruct.whenLastItemAdded = new Date ();
+				jstruct.flDirty = true;
+				});
+			}
+		}
+	function saveChangedFeedRivers () {
+		for (var x in allTheFeedRivers) {
+			var theRiver = allTheFeedRivers [x], item = theRiver.jstruct;
+			if (item.flDirty) {
+				item.flDirty = false;
+				item.ctSaves++;
+				item.whenLastSave = new Date ();
+				writeFile (theRiver.f, utils.jsonStringify (item));
+				}
+			}
+		}
+	function tossOldFeedRivers () { //delete rivers that haven't been accessed in the last minute 
+		for (var x in allTheFeedRivers) {
+			if (utils.secondsSince (allTheFeedRivers [x].whenLastAccess) > 60) {
+				delete allTheFeedRivers [x];
+				}
+			}
+		}
+	function getFeedRiverForServer (urlfeed, callback) {
+		getFeedRiver (urlfeed, function (jstruct) {
+			var stats = findInFeedsArray (urlfeed);
+			var returnstruct = {
+				title: stats.title,
+				link: stats.htmlurl,
+				description: stats.description,
+				url: stats.url,
+				items: new Array (),
+				stats: {
+					ctReads: stats.ctReads,
+					ctItems: stats.ctItems,
+					ctReadErrors: stats.ctReadErrors,
+					ctConsecutiveReadErrors: stats.ctConsecutiveReadErrors,
+					whenLastNewItem: stats.whenLastNewItem,
+					whenLastReadError: stats.whenLastReadError,
+					whenLastRead: stats.whenLastRead,
+					mostRecentPubDate: stats.mostRecentPubDate,
+					cloud: {
+						ctCloudRenew: stats.ctCloudRenew,
+						ctCloudRenewErrors: stats.ctCloudRenewErrors,
+						ctConsecutiveCloudRenewErrors: stats.ctConsecutiveCloudRenewErrors,
+						whenLastCloudRenew: stats.whenLastCloudRenew,
+						whenLastCloudRenewError: stats.whenLastCloudRenewError
+						}
+					}
+				};
+			for (var i = jstruct.items.length - 1; i >= 0; i--) {
+				returnstruct.items.unshift (jstruct.items [i]);
+				}
+			callback (returnstruct);
+			});
+		}
+
+
 //podcasts -- 4/17/17 by DW
 	var podcastQueue = new Array (), ctConcurrentPodcastDownloads = 0;
 	
@@ -1587,6 +1707,8 @@ function myConsoleLog (s) { //3/28/17 by DW
 					addRiverItemToList (listname, item);
 					}
 				}
+		//add the item to the feed's river -- 6/29/17 by DW
+			addItemToFeedRiver (urlfeed, item)
 		
 		downloadPodcast (item, urlfeed); //4/17/17 by DW
 		
@@ -2355,6 +2477,11 @@ function myConsoleLog (s) { //3/28/17 by DW
 								returnText (utils.jsonStringify (theFeed), true);    
 								});
 							break;
+						case "/getfeedriver": //6/29/17 by DW
+							getFeedRiverForServer (parsedUrl.query.url, function (jstruct) {
+								returnText (utils.jsonStringify (jstruct), true);    
+								});
+							break;
 						case "/getoneriver": //11/28/14 by DW 
 							getOneRiver (parsedUrl.query.fname, function (s) {
 								returnText (s, true);
@@ -2630,6 +2757,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 			renewNextSubscription (); 
 			writeLocalStorageIfChanged (); 
 			saveChangedRiverStructs ();
+			saveChangedFeedRivers (); //6/29/17 by DW
 			if (config.flBuildEveryFiveSeconds) { //3/29/17 by DW
 				buildChangedRivers ();
 				}
@@ -2658,6 +2786,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 				doConsoleMessage ();
 				loadListsFromFolder ();
 				checkRiverRollover ();
+				tossOldFeedRivers (); //6/29/17 by DW
 				//check for hour rollover
 					var thisHour = now.getHours ();
 					if (thisHour != lastEveryMinuteHour) {
