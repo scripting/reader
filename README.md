@@ -32,6 +32,10 @@ It's included as <a href="https://github.com/scripting/reader/tree/master/exampl
 
 ### Updates
 
+#### v0.5.16 -- 6/29/17 by DW
+
+We now optionally maintain rivers for each feed. This could make a single-feed viewer possible in <a href="http://this.how/electricRiver">Electric River</a> and other environments. That is, all the stories from one feed in reverse-chronologic order.
+
 #### v0.5.15 -- 6/25/17 by DW
 
 HTTP requests made by davereader now accept zip compression. 
