@@ -1,3 +1,5 @@
+var myProductName = "River5"; myVersion = "0.5.18";
+
 /*  The MIT License (MIT)
 	Copyright (c) 2014-2016 Dave Winer
 	
@@ -24,8 +26,6 @@ exports.init = init;
 exports.httpRequest = handleHttpRequest; //3/24/17 by DW
 exports.readAllFeedsNow = readAllFeedsNow; //4/18/17 by DW
 exports.notifyWebSocketListeners = notifyWebSocketListeners; //6/20/17 by DW
-
-var myProductName = "River5"; myVersion = "0.5.16";
 
 var fs = require ("fs");
 var request = require ("request");
@@ -1454,13 +1454,21 @@ function myConsoleLog (s) { //3/28/17 by DW
 				});
 			}
 		}
-	function addItemToFeedRiver (urlfeed, item) {
+	function addItemToFeedRiver (urlfeed, item, itemFromParser) {
 		if (config.flSaveFeedRivers) {
 			getFeedRiver (urlfeed, function (jstruct) {
-				jstruct.items.push (item);
-				if (jstruct.items.length > config.maxRiverItems) {
+				var itemToPush = new Object ();
+				utils.copyScalars (item, itemToPush);
+				itemToPush.fullDescription = itemFromParser.description;
+				if (item.outline !== undefined) { //7/6/17 by DW
+					itemToPush.outline = item.outline;
+					}
+				jstruct.items.push (itemToPush);
+				
+				while (jstruct.items.length > config.maxRiverItems) {
 					jstruct.items.shift ();
 					}
+				
 				jstruct.ctItemsAdded++;
 				jstruct.whenLastItemAdded = new Date ();
 				jstruct.flDirty = true;
@@ -1488,34 +1496,39 @@ function myConsoleLog (s) { //3/28/17 by DW
 	function getFeedRiverForServer (urlfeed, callback) {
 		getFeedRiver (urlfeed, function (jstruct) {
 			var stats = findInFeedsArray (urlfeed);
-			var returnstruct = {
-				title: stats.title,
-				link: stats.htmlurl,
-				description: stats.description,
-				url: stats.url,
-				items: new Array (),
-				stats: {
-					ctReads: stats.ctReads,
-					ctItems: stats.ctItems,
-					ctReadErrors: stats.ctReadErrors,
-					ctConsecutiveReadErrors: stats.ctConsecutiveReadErrors,
-					whenLastNewItem: stats.whenLastNewItem,
-					whenLastReadError: stats.whenLastReadError,
-					whenLastRead: stats.whenLastRead,
-					mostRecentPubDate: stats.mostRecentPubDate,
-					cloud: {
-						ctCloudRenew: stats.ctCloudRenew,
-						ctCloudRenewErrors: stats.ctCloudRenewErrors,
-						ctConsecutiveCloudRenewErrors: stats.ctConsecutiveCloudRenewErrors,
-						whenLastCloudRenew: stats.whenLastCloudRenew,
-						whenLastCloudRenewError: stats.whenLastCloudRenewError
-						}
-					}
-				};
-			for (var i = jstruct.items.length - 1; i >= 0; i--) {
-				returnstruct.items.unshift (jstruct.items [i]);
+			if (stats === undefined) {
+				callback (returnstruct);
 				}
-			callback (returnstruct);
+			else {
+				var returnstruct = {
+					title: stats.title,
+					link: stats.htmlurl,
+					description: stats.description,
+					url: stats.url,
+					items: new Array (),
+					stats: {
+						ctReads: stats.ctReads,
+						ctItems: stats.ctItems,
+						ctReadErrors: stats.ctReadErrors,
+						ctConsecutiveReadErrors: stats.ctConsecutiveReadErrors,
+						whenLastNewItem: stats.whenLastNewItem,
+						whenLastReadError: stats.whenLastReadError,
+						whenLastRead: stats.whenLastRead,
+						mostRecentPubDate: stats.mostRecentPubDate,
+						cloud: {
+							ctCloudRenew: stats.ctCloudRenew,
+							ctCloudRenewErrors: stats.ctCloudRenewErrors,
+							ctConsecutiveCloudRenewErrors: stats.ctConsecutiveCloudRenewErrors,
+							whenLastCloudRenew: stats.whenLastCloudRenew,
+							whenLastCloudRenewError: stats.whenLastCloudRenewError
+							}
+						}
+					};
+				for (var i = jstruct.items.length - 1; i >= 0; i--) {
+					returnstruct.items.unshift (jstruct.items [i]);
+					}
+				callback (returnstruct);
+				}
 			});
 		}
 
@@ -1708,7 +1721,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 					}
 				}
 		//add the item to the feed's river -- 6/29/17 by DW
-			addItemToFeedRiver (urlfeed, item)
+			addItemToFeedRiver (urlfeed, item, itemFromParser)
 		
 		downloadPodcast (item, urlfeed); //4/17/17 by DW
 		
