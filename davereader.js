@@ -1,4 +1,4 @@
-var myProductName = "River5"; myVersion = "0.5.18";
+var myProductName = "River5"; myVersion = "0.5.19";
 
 /*  The MIT License (MIT)
 	Copyright (c) 2014-2016 Dave Winer
@@ -1441,7 +1441,6 @@ function myConsoleLog (s) { //3/28/17 by DW
 			}
 		else {
 			var f = getFolderForFeed (urlfeed) + "feedRiver.json";
-			console.log ("\ngetFeedRiver: f == " + f);
 			readRiverData (f, function (jstruct) {
 				allTheFeedRivers [urlfeed] = {
 					f: f,
