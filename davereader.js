@@ -1,4 +1,4 @@
-var myProductName = "River5"; myVersion = "0.5.19";
+var myProductName = "River5"; myVersion = "0.5.21";
 
 /*  The MIT License (MIT)
 	Copyright (c) 2014-2016 Dave Winer
@@ -76,6 +76,7 @@ var config = {
 	
 	urlServerHomePageSource: "http://rss2.io/code/feedtools/misc/serverhomepage.html", 
 	urlDashboardSource: "http://rss2.io/code/feedtools/misc/dashboard.html",
+	urlFeedViewerApp: "http://rss2.io/code/feedtools/feedviewer/", //7/10/17 by DW
 	urlFavicon: "http://rss2.io/code/favicon.ico",
 	
 	notifyListenersCallback: undefined, //3/25/17 by DW
