@@ -36,6 +36,10 @@ It's included as <a href="https://github.com/scripting/reader/tree/master/exampl
 
 The new single-feed viewer feature is now available for all River5 installations. To activate the feature, update your installation to v0.5.21. When you access the home page of your server through the web, when you click on the favicon of a feed, it will take you to the single-feed viewer with the items for that feed. 
 
+Note that the only change in this release is that there's a new element in config, urlFeedViewerApp. It's picked up in the home page app in constructing the link for the favicon. 
+
+In v0.5.19 we added a feature that keeps a river for each feed. That's where the major work was on the server for this feature. 
+
 #### v0.5.16 -- 6/29/17 by DW
 
 We now optionally maintain rivers for each feed. This could make a single-feed viewer possible in <a href="http://this.how/electricRiver">Electric River</a> and other environments. That is, all the stories from one feed in reverse-chronologic order.
