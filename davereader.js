@@ -1,4 +1,4 @@
-var myProductName = "River5"; myVersion = "0.5.21";
+var myProductName = "River5"; myVersion = "0.5.22";
 
 /*  The MIT License (MIT)
 	Copyright (c) 2014-2016 Dave Winer
@@ -812,6 +812,11 @@ function myConsoleLog (s) { //3/28/17 by DW
 					}
 				}
 			});
+		}
+	function readFeedIfSubscribed (urlfeed, callback) { //8/18/17 by DW
+		if (atLeastOneSubscriber (urlfeed)) {
+			readFeed (urlfeed, callback);
+			}
 		}
 	function subscribeToFeed (urlfeed, listname) {
 		if ((urlfeed !== undefined) && (urlfeed.length > 0)) { 
@@ -2034,7 +2039,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 			serverStats.urlFeedLastCloudUpdate = urlFeed;
 			flStatsChanged = true;
 			myConsoleLog ("\nrssCloudFeedUpdated: " + urlFeed);
-			readFeed (urlFeed, function () {
+			readFeedIfSubscribed (urlFeed, function () {
 				});
 			}
 		}
@@ -2470,7 +2475,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 									}
 								else {
 									returnText ("Ping received, will read asap.");    
-									readFeed (url, function () {
+									readFeedIfSubscribed (url, function () {
 										myConsoleLog ("Feed read.");
 										});
 									}

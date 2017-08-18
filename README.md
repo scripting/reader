@@ -32,6 +32,10 @@ It's included as <a href="https://github.com/scripting/reader/tree/master/exampl
 
 ### Updates
 
+#### v0.5.22 -- 8/18/17 by DW
+
+There were a couple of places where we would read a feed even if no one was subscribed to it. This created problems in davecast when I wanted to unfollow Scripting News. I imagine it's an annoyance for some when they unsub from a feed only to have updates still show up in the river. It should stop when the rssCloud pings stop, though. The right thing to do (which we now do) is to check if there's at least one subscriber before reading the feed. 
+
 #### v0.5.21 -- 7/10/17 by DW
 
 The new single-feed viewer feature is now available for all River5 installations. To activate the feature, update your installation to v0.5.21. When you access the home page of your server through the web, when you click on the favicon of a feed, it will take you to the single-feed viewer with the items for that feed. 
