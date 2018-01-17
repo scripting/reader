@@ -32,6 +32,18 @@ It's included as <a href="https://github.com/scripting/reader/tree/master/exampl
 
 ### Updates
 
+#### v0.6.2 -- 1/17/18 by DW
+
+It's been a while since there was an update so I bumped from 0.5.x to 0.6.x. 
+
+A bug was <a href="https://github.com/scripting/river5/issues/14">reported</a>, that the first time new items appear in a river in a given River5 run, only one of the items actually appears in the river. This applies to both kinds of rivers, ones that correspond to lists, and ones that accumulate all the items in a given river (a feature that appeared first in v0.5.21). The other new items are lost. I was able to reproduce the problem, and spent a <a href="http://scripting.com/2018/01/16/180415.html">few</a> <a href="http://scripting.com/2018/01/15/234534.html">days</a> <a href="http://scripting.com/2018/01/14/155244.html">discussing</a> <a href="http://scripting.com/2018/01/13/183433.html">possible</a> solutions, and then arrived at a very simple approach, that appears to work.
+
+We do two things differently:
+
+1. At startup, before reading any feeds, we load all the river files for all the rivers that correspond to lists. 
+
+2. When reading a feed, we no longer process items as they are returned by <a href="https://github.com/danmactough/node-feedparser">feedparser</a>, we accumulate all the items in an array, and process them all at the end. Before processing we make sure the feed's river is in the cache, and read it if it's not. That way all the new items make it into the river. 
+
 #### v0.5.22 -- 8/18/17 by DW
 
 There were a couple of places where we would read a feed even if no one was subscribed to it. This created problems in davecast when I wanted to unfollow Scripting News. I imagine it's an annoyance for some when they unsub from a feed only to have updates still show up in the river. It should stop when the rssCloud pings stop, though. The right thing to do (which we now do) is to check if there's at least one subscriber before reading the feed. 

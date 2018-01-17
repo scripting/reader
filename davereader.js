@@ -1,7 +1,7 @@
-var myProductName = "River5"; myVersion = "0.5.22";
+var myProductName = "River5"; myVersion = "0.6.2";
 
 /*  The MIT License (MIT)
-	Copyright (c) 2014-2016 Dave Winer
+	Copyright (c) 2014-2018 Dave Winer
 	
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -234,7 +234,6 @@ function myConsoleLog (s) { //3/28/17 by DW
 			});
 		}
 	function listFiles (folder, callback) {
-		
 		fsSureFilePath (folder + "xxx", function () {
 			fs.readdir (folder, function (err, list) {
 				if (!endsWithChar (folder, "/")) {
@@ -749,6 +748,45 @@ function myConsoleLog (s) { //3/28/17 by DW
 						}
 					});
 				}
+			function readXmlFeed (urlfeed) { //1/16/18 by DW
+				var req = myRequestCall (urlfeed);
+				var feedparser = new FeedParser ();
+				var feedItems = new Array ();
+				req.on ("response", function (response) {
+					var stream = this;
+					if (response.statusCode == 200) {
+						stream.pipe (feedparser);
+						}
+					else {
+						feedError ("readFeed: response.statusCode == " + response.statusCode);
+						}
+					});
+				req.on ("error", function (res) {
+					feedError ();
+					});
+				feedparser.on ("readable", function () {
+					try {
+						var item = this.read (), flnew;
+						if (item !== null) { //2/9/17 by DW
+							feedItems.push (item);
+							}
+						}
+					catch (err) {
+						myConsoleLog ("readXmlFeed: error == " + err.message);
+						}
+					});
+				feedparser.on ("error", function () {
+					feedError ();
+					});
+				feedparser.on ("end", function () {
+					getFeedRiver (urlfeed, function (jstruct) { //make sure the feed's river is loaded in cache
+						for (var i = 0; i < feedItems.length; i++) {
+							processFeedItem (feedItems [i]);
+							}
+						finishFeedProcessing ();
+						});
+					});
+				}
 			if (feed.prefs.enabled) {
 				var flFirstRead = feed.stats.ctReads == 0, feedstats;
 				feedstats = findInFeedsArray (urlfeed); //the in-memory feed stats, stuff the scanner uses to figure out which feed to read next
@@ -778,37 +816,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 					readJsonFeed (urlfeed);
 					}
 				else {
-					var req = myRequestCall (urlfeed);
-					var feedparser = new FeedParser ();
-					req.on ("response", function (res) {
-						var stream = this;
-						if (res.statusCode == 200) {
-							stream.pipe (feedparser);
-							}
-						else {
-							feedError ("readFeed: res.statusCode == " + res.statusCode);
-							}
-						});
-					req.on ("error", function (res) {
-						feedError ();
-						});
-					feedparser.on ("readable", function () {
-						try {
-							var item = this.read (), flnew;
-							if (item !== null) { //2/9/17 by DW
-								processFeedItem (item);
-								}
-							}
-						catch (err) {
-							myConsoleLog ("readFeed: error == " + err.message);
-							}
-						});
-					feedparser.on ("error", function () {
-						feedError ();
-						});
-					feedparser.on ("end", function () {
-						finishFeedProcessing ();
-						});
+					readXmlFeed (urlfeed); //1/16/18 by DW
 					}
 				}
 			});
@@ -1268,7 +1276,6 @@ function myConsoleLog (s) { //3/28/17 by DW
 				}
 			}
 		}
-	
 	function buildOneRiver (listname, callback) { 
 		var theRiver = new Object (), starttime = new Date (), ctitems = 0, titles = new Object (), ctDuplicatesSkipped = 0;
 		theRiver.updatedFeeds = new Object ();
@@ -1406,10 +1413,24 @@ function myConsoleLog (s) { //3/28/17 by DW
 			finishBuild ();
 			});
 		}
-	
-	
-
-
+	function loadListBasedRivers (callback) { //1/16/18 by DW -- load all the list-based rivers at startup
+		fs.readdir (config.listsFolder, function (err, list) {
+			if (list !== undefined) { //6/4/15 by DW
+				function doNextFolder (ix) {
+					if (ix < list.length) {
+						var listname = list [ix];
+						getRiverData (listname, function () {
+							doNextFolder (ix + 1);
+							});
+						}
+					else {
+						callback ();
+						}
+					}
+				doNextFolder (0);
+				}
+			});
+		}
 //keep a river for each feed -- 6/29/17 by DW
 	var allTheFeedRivers = new Object (); 
 	
@@ -1536,8 +1557,6 @@ function myConsoleLog (s) { //3/28/17 by DW
 				}
 			});
 		}
-
-
 //podcasts -- 4/17/17 by DW
 	var podcastQueue = new Array (), ctConcurrentPodcastDownloads = 0;
 	
@@ -2856,26 +2875,28 @@ function init (userConfig, callback) {
 			
 			readStats (fnameFeedsStats, feedsArray, function () {
 				loadListsFromFolder (function () {
-					loadLocalStorage (function () {
-						utils.getFileModDate (config.fnameApp, function (theDate) { //set origAppModDate
-							origAppModDate = theDate;
-							
-							var portmsg = "";
-							if (config.flHttpEnabled) {
-								portmsg = " running on port " + config.httpPort;
-								}
-							
-							myConsoleLog ("\n" + configToJsonText ()); 
-							myConsoleLog ("\n" + myProductName + " v" + myVersion + portmsg + ".\n"); 
-							
-							setInterval (everyQuarterSecond, 250); 
-							setInterval (everySecond, 1000); 
-							setInterval (everyFiveSeconds, 5000); 
-							startHttpServer ();
-							startWebSocketServer ();
-							if (callback !== undefined) {
-								callback ();
-								}
+					loadListBasedRivers (function () {
+						loadLocalStorage (function () {
+							utils.getFileModDate (config.fnameApp, function (theDate) { //set origAppModDate
+								origAppModDate = theDate;
+								
+								var portmsg = "";
+								if (config.flHttpEnabled) {
+									portmsg = " running on port " + config.httpPort;
+									}
+								
+								myConsoleLog ("\n" + configToJsonText ()); 
+								myConsoleLog ("\n" + myProductName + " v" + myVersion + portmsg + ".\n"); 
+								
+								setInterval (everyQuarterSecond, 250); 
+								setInterval (everySecond, 1000); 
+								setInterval (everyFiveSeconds, 5000); 
+								startHttpServer ();
+								startWebSocketServer ();
+								if (callback !== undefined) {
+									callback ();
+									}
+								});
 							});
 						});
 					});
