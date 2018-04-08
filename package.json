@@ -3,7 +3,7 @@
 	"description": "Feed reading and aggregating for Node.",
 	"author": "Dave Winer <dave@smallpicture.com>",
 	"license": "MIT",
-	"version": "0.6.2",
+	"version": "0.6.6", 
 	"main": "davereader.js",
 	"repository": {
 		"type": "git",
@@ -19,6 +19,7 @@
 		"md5": "*",
 		"nodejs-websocket": "*",
 		"opmlparser": "*",
-		"feedparser": "*"
+		"feedparser": "*",
+		"davefeedread": "*"
 		} 
 	}

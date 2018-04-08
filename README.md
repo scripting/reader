@@ -32,6 +32,12 @@ It's included as <a href="https://github.com/scripting/reader/tree/master/exampl
 
 ### Updates
 
+#### v0.6.6 -- 4/8/18 by DW
+
+Feed reading is now charset-aware. If you were seeing garbled text in feeds in German, for example, this version should fix that.  
+
+To update, quit the app, type <i>npm update</i> at the command line, then restart the app. 
+
 #### v0.6.2 -- 1/17/18 by DW
 
 It's been a while since there was an update so I bumped from 0.5.x to 0.6.x. 

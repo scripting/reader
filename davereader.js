@@ -1,4 +1,4 @@
-var myProductName = "River5"; myVersion = "0.6.2";
+var myProductName = "River5"; myVersion = "0.6.6"; 
 
 /*  The MIT License (MIT)
 	Copyright (c) 2014-2018 Dave Winer
@@ -27,16 +27,17 @@ exports.httpRequest = handleHttpRequest; //3/24/17 by DW
 exports.readAllFeedsNow = readAllFeedsNow; //4/18/17 by DW
 exports.notifyWebSocketListeners = notifyWebSocketListeners; //6/20/17 by DW
 
-var fs = require ("fs");
-var request = require ("request");
-var http = require ("http"); 
-var urlpack = require ("url");
-var md5 = require ("md5");
-var websocket = require ("nodejs-websocket"); 
-var qs = require ("querystring");
-var OpmlParser = require ("opmlparser");
-var FeedParser = require ("feedparser");
-var utils = require ("daveutils");
+const fs = require ("fs");
+const request = require ("request");
+const http = require ("http"); 
+const urlpack = require ("url");
+const md5 = require ("md5");
+const websocket = require ("nodejs-websocket"); 
+const qs = require ("querystring");
+const OpmlParser = require ("opmlparser");
+const FeedParser = require ("feedparser");
+const utils = require ("daveutils");
+const feedRead = require ("davefeedread"); //4/8/18 by DW
 
 var config = {
 	enabled: true,
@@ -749,42 +750,18 @@ function myConsoleLog (s) { //3/28/17 by DW
 					});
 				}
 			function readXmlFeed (urlfeed) { //1/16/18 by DW
-				var req = myRequestCall (urlfeed);
-				var feedparser = new FeedParser ();
-				var feedItems = new Array ();
-				req.on ("response", function (response) {
-					var stream = this;
-					if (response.statusCode == 200) {
-						stream.pipe (feedparser);
+				feedRead.parseUrl (urlfeed, undefined, function (err, theFeed, httpResponse) { 
+					if (err) {
+						feedError (err.message);
 						}
 					else {
-						feedError ("readFeed: response.statusCode == " + response.statusCode);
+						getFeedRiver (urlfeed, function (jstruct) { //make sure the feed's river is loaded in cache
+							for (var i = 0; i < theFeed.items.length; i++) {
+								processFeedItem (theFeed.items [i]);
+								}
+							finishFeedProcessing ();
+							});
 						}
-					});
-				req.on ("error", function (res) {
-					feedError ();
-					});
-				feedparser.on ("readable", function () {
-					try {
-						var item = this.read (), flnew;
-						if (item !== null) { //2/9/17 by DW
-							feedItems.push (item);
-							}
-						}
-					catch (err) {
-						myConsoleLog ("readXmlFeed: error == " + err.message);
-						}
-					});
-				feedparser.on ("error", function () {
-					feedError ();
-					});
-				feedparser.on ("end", function () {
-					getFeedRiver (urlfeed, function (jstruct) { //make sure the feed's river is loaded in cache
-						for (var i = 0; i < feedItems.length; i++) {
-							processFeedItem (feedItems [i]);
-							}
-						finishFeedProcessing ();
-						});
 					});
 				}
 			if (feed.prefs.enabled) {
