@@ -1,4 +1,4 @@
-var myProductName = "River5"; myVersion = "0.6.6"; 
+var myProductName = "River5"; myVersion = "0.6.7"; 
 
 /*  The MIT License (MIT)
 	Copyright (c) 2014-2018 Dave Winer
@@ -1311,79 +1311,85 @@ function myConsoleLog (s) { //3/28/17 by DW
 				if (!flskip) {
 					if (story.feedUrl != lastfeedurl) {
 						var feedstats = findInFeedsArray (story.feedUrl);
-						var ix = theRiver.updatedFeeds.updatedFeed.length;
-						theRiver.updatedFeeds.updatedFeed [ix] = new Object ();
-						theRiverFeed = theRiver.updatedFeeds.updatedFeed [ix];
-						
-						theRiverFeed.feedTitle = feedstats.title;
-						theRiverFeed.feedUrl = story.feedUrl;
-						theRiverFeed.websiteUrl = feedstats.htmlurl;
-						//description
-							if (feedstats.description == undefined) {
-								theRiverFeed.feedDescription = "";
-								}
-							else {
-								theRiverFeed.feedDescription = feedstats.description;
-								}
-						//whenLastUpdate -- 6/7/15 by DW
-							if (story.when !== undefined) {
-								theRiverFeed.whenLastUpdate = new Date (story.when).toUTCString ();
-								}
-							else {
-								theRiverFeed.whenLastUpdate = new Date (feedstats.whenLastNewItem).toUTCString ();
-								}
-						theRiverFeed.item = new Array ();
-						
-						lastfeedurl = story.feedUrl;
-						}
-					
-					var thePubDate = story.pubdate; //2/10/16 by DW
-					if (thePubDate == null) {
-						thePubDate = starttime;
-						}
-					
-					var theItem = {
-						title: story.title,
-						link: story.link,
-						body: story.description,
-						pubDate: new Date (thePubDate).toUTCString (),
-						permaLink: story.permalink
-						};
-					if (story.outline != undefined) { //7/16/14 by DW
-						theItem.outline = story.outline;
-						}
-					if (story.comments.length > 0) { //6/7/14 by DW
-						theItem.comments = story.comments;
-						}
-					//enclosure -- 5/30/14 by DW
-						if (story.enclosure != undefined) {
-							var flgood = true;
-							
-							if ((story.enclosure.type == undefined) || (story.enclosure.length === undefined)) { //both are required
-								flgood = false; //sorry! :-(
-								}
-							else {
-								if (utils.stringCountFields (story.enclosure.type, "/") < 2) { //something like "image" -- not a valid type
-									flgood = false; //we read the spec, did you? :-)
-									}
-								}
-							
-							if (flgood) {
-								theItem.enclosure = [story.enclosure];
-								}
-							}
-					//id
-						if (story.id == undefined) {
-							theItem.id = "";
+						if (feedstats === undefined) { //we could have unsubbed the feed -- 4/8/18 by DW
+							flskip = true;
 							}
 						else {
-							theItem.id = utils.padWithZeros (story.id, 7);
+							var ix = theRiver.updatedFeeds.updatedFeed.length;
+							theRiver.updatedFeeds.updatedFeed [ix] = new Object ();
+							theRiverFeed = theRiver.updatedFeeds.updatedFeed [ix];
+							
+							theRiverFeed.feedTitle = feedstats.title;
+							theRiverFeed.feedUrl = story.feedUrl;
+							theRiverFeed.websiteUrl = feedstats.htmlurl;
+							//description
+								if (feedstats.description == undefined) {
+									theRiverFeed.feedDescription = "";
+									}
+								else {
+									theRiverFeed.feedDescription = feedstats.description;
+									}
+							//whenLastUpdate -- 6/7/15 by DW
+								if (story.when !== undefined) {
+									theRiverFeed.whenLastUpdate = new Date (story.when).toUTCString ();
+									}
+								else {
+									theRiverFeed.whenLastUpdate = new Date (feedstats.whenLastNewItem).toUTCString ();
+									}
+							theRiverFeed.item = new Array ();
+							
+							lastfeedurl = story.feedUrl;
 							}
-					
-					theRiverFeed.item [theRiverFeed.item.length] = theItem;
-					
-					if (config.flSkipDuplicateTitles) { //5/29/14 by DW -- add the title to the titles object
-						titles [reducedtitle] = true;
+						}
+					if (!flskip) {
+						var thePubDate = story.pubdate; //2/10/16 by DW
+						if (thePubDate == null) {
+							thePubDate = starttime;
+							}
+						
+						var theItem = {
+							title: story.title,
+							link: story.link,
+							body: story.description,
+							pubDate: new Date (thePubDate).toUTCString (),
+							permaLink: story.permalink
+							};
+						if (story.outline != undefined) { //7/16/14 by DW
+							theItem.outline = story.outline;
+							}
+						if (story.comments.length > 0) { //6/7/14 by DW
+							theItem.comments = story.comments;
+							}
+						//enclosure -- 5/30/14 by DW
+							if (story.enclosure != undefined) {
+								var flgood = true;
+								
+								if ((story.enclosure.type == undefined) || (story.enclosure.length === undefined)) { //both are required
+									flgood = false; //sorry! :-(
+									}
+								else {
+									if (utils.stringCountFields (story.enclosure.type, "/") < 2) { //something like "image" -- not a valid type
+										flgood = false; //we read the spec, did you? :-)
+										}
+									}
+								
+								if (flgood) {
+									theItem.enclosure = [story.enclosure];
+									}
+								}
+						//id
+							if (story.id == undefined) {
+								theItem.id = "";
+								}
+							else {
+								theItem.id = utils.padWithZeros (story.id, 7);
+								}
+						
+						theRiverFeed.item [theRiverFeed.item.length] = theItem;
+						
+						if (config.flSkipDuplicateTitles) { //5/29/14 by DW -- add the title to the titles object
+							titles [reducedtitle] = true;
+							}
 						}
 					}
 				}

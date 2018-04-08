@@ -32,6 +32,10 @@ It's included as <a href="https://github.com/scripting/reader/tree/master/exampl
 
 ### Updates
 
+#### v0.6.7 -- 4/8/18 by DW
+
+Fixed a bug where if you unsubbed from a feed, River5 could crash when rebuilding a river that contains items from that feed. 
+
 #### v0.6.6 -- 4/8/18 by DW
 
 Feed reading is now charset-aware. If you were seeing garbled text in feeds in German, for example, this version should fix that.  
