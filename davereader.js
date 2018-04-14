@@ -1,4 +1,4 @@
-var myProductName = "River5"; myVersion = "0.6.7"; 
+var myProductName = "River5"; myVersion = "0.6.8"; 
 
 /*  The MIT License (MIT)
 	Copyright (c) 2014-2018 Dave Winer
@@ -75,10 +75,11 @@ var config = {
 	flWatchAppDateChange: false,
 	fnameApp: "lib/feedtools.js",
 	
-	urlServerHomePageSource: "http://rss2.io/code/feedtools/misc/serverhomepage.html", 
-	urlDashboardSource: "http://rss2.io/code/feedtools/misc/dashboard.html",
-	urlFeedViewerApp: "http://rss2.io/code/feedtools/feedviewer/", //7/10/17 by DW
-	urlFavicon: "http://rss2.io/code/favicon.ico",
+	urlServerHomePageSource: "https://cdn.jsdelivr.net/npm/river5/includes/misc/serverhomepage.html", 
+	urlDashboardSource: "https://cdn.jsdelivr.net/npm/river5/includes/misc/dashboard.html",
+	urlFeedViewerApp: "https://cdn.jsdelivr.net/npm/river5/includes/feedviewer/index.html", //7/10/17 by DW
+	urlFavicon: "https://cdn.jsdelivr.net/npm/river5/includes/misc/favicon.ico",
+	flIntegratedFeedViewer: true, //4/14/18 by DW
 	
 	notifyListenersCallback: undefined, //3/25/17 by DW
 	statsChangedCallback: undefined, //3/25/17 by DW
@@ -2428,12 +2429,27 @@ function myConsoleLog (s) { //3/28/17 by DW
 				});
 			
 			}
+		function returnFeedViewerPage () {
+			request (config.urlFeedViewerApp, function (error, response, templatetext) {
+				if (!error && response.statusCode == 200) {
+					var pagetable = {
+						config: configToJsonText (),
+						version: myVersion
+						};
+					var pagetext = utils.multipleReplaceAll (templatetext, pagetable, false, "[%", "%]");
+					returnHtml (pagetext);
+					}
+				});
+			}
 		function handleRequestLocally () {
 			switch (httpRequest.method) {
 				case "GET":
 					switch (lowerpath) {
 						case "/": //7/4/15 by DW
 							returnServerHomePage ();
+							break;
+						case "/feedviewer": //4/13/18 by DW
+							returnFeedViewerPage ();
 							break;
 						case "/version":
 							returnText (myVersion);

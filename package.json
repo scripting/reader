@@ -3,7 +3,7 @@
 	"description": "Feed reading and aggregating for Node.",
 	"author": "Dave Winer <dave@smallpicture.com>",
 	"license": "MIT",
-	"version": "0.6.7", 
+	"version": "0.6.8", 
 	"main": "davereader.js",
 	"repository": {
 		"type": "git",
