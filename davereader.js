@@ -1,4 +1,4 @@
-var myProductName = "River5"; myVersion = "0.6.8"; 
+var myProductName = "River5"; myVersion = "0.6.10"; 
 
 /*  The MIT License (MIT)
 	Copyright (c) 2014-2018 Dave Winer
@@ -75,8 +75,9 @@ var config = {
 	flWatchAppDateChange: false,
 	fnameApp: "lib/feedtools.js",
 	
-	urlServerHomePageSource: "https://cdn.jsdelivr.net/npm/river5/includes/misc/serverhomepage.html", 
-	urlDashboardSource: "https://cdn.jsdelivr.net/npm/river5/includes/misc/dashboard.html",
+	
+	urlServerHomePageSource: "https://s3.amazonaws.com/scripting.com/code/river5/serverhomepage.html", 
+	urlDashboardSource: "https://s3.amazonaws.com/scripting.com/code/river5/dashboard.html",
 	urlFeedViewerApp: "https://cdn.jsdelivr.net/npm/river5/includes/feedviewer/index.html", //7/10/17 by DW
 	urlFavicon: "https://cdn.jsdelivr.net/npm/river5/includes/misc/favicon.ico",
 	flIntegratedFeedViewer: true, //4/14/18 by DW
@@ -95,7 +96,9 @@ var config = {
 	maxFileNameLength: 32, //4/17/17 by DW
 	maxConcurrentPodcastDownloads: 10, //4/17/17 by DW
 	
-	flSaveFeedRivers: true //6/29/17 by DW
+	flSaveFeedRivers: true, //6/29/17 by DW
+	
+	httpUserAgent: myProductName + " v" + myVersion //4/29/18 by DW
 	};
 var serverStats = {
 	aggregator: myProductName + " v" + myVersion,
@@ -2350,12 +2353,16 @@ function myConsoleLog (s) { //3/28/17 by DW
 		return (utils.jsonStringify (theCopy));
 		}
 	function handleHttpRequest (httpRequest, httpResponse) {
+		function httpWriteHead (code, headers) { //4/29/18 by DW
+			headers ["User-Agent"] = config.httpUserAgent;
+			httpResponse.writeHead (code, headers);
+			}
 		function doHttpReturn (code, type, val) {
-			httpResponse.writeHead (code, {"Content-Type": type});
+			httpWriteHead (code, {"Content-Type": type});
 			httpResponse.end (val.toString ());    
 			}
 		function returnHtml (htmltext) {
-			httpResponse.writeHead (200, {"Content-Type": "text/html"});
+			httpWriteHead (200, {"Content-Type": "text/html"});
 			httpResponse.end (htmltext);    
 			}
 		function returnText (theText, flAnyOrigin) {
@@ -2366,7 +2373,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 					}
 				return (headers);
 				}
-			httpResponse.writeHead (200, getHeaders ("text/plain", flAnyOrigin));
+			httpWriteHead (200, getHeaders ("text/plain", flAnyOrigin));
 			httpResponse.end (theText);    
 			}
 		function return404 (msgIfAny) {
@@ -2374,7 +2381,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 				var headers = {"Content-Type": type};
 				return (headers);
 				}
-			httpResponse.writeHead (404, getHeaders ("text/plain"));
+			httpWriteHead (404, getHeaders ("text/plain"));
 			if (msgIfAny !== undefined) {
 				httpResponse.end (msgIfAny);    
 				}
@@ -2386,7 +2393,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 			if (code === undefined) {
 				code = 302;
 				}
-			httpResponse.writeHead (code, {"location": url, "Content-Type": "text/plain"});
+			httpWriteHead (code, {"location": url, "Content-Type": "text/plain"});
 			httpResponse.end (code + " REDIRECT");    
 			}
 			
@@ -2394,7 +2401,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 			if (code === undefined) {
 				code = 500;
 				}
-			httpResponse.writeHead (code, {"location": url, "Content-Type": "text/plain"});
+			httpWriteHead (code, {"location": url, "Content-Type": "text/plain"});
 			httpResponse.end (message);    
 			}
 			
@@ -2410,7 +2417,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 			if (type == undefined) {
 				type = "text/plain";
 				}
-			httpResponse.writeHead (200, {"Content-Type": type, "Access-Control-Allow-Origin": "*"});
+			httpWriteHead (200, {"Content-Type": type, "Access-Control-Allow-Origin": "*"});
 			}
 		function respondWithObject (obj) {
 			writeHead ("application/json");
@@ -2500,7 +2507,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 								}
 							break;
 						case "/getlistnames": //11/11/14 by DW
-							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+							httpWriteHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end (utils.jsonStringify (serverStats.listNames));    
 							break;
 						case "/getalllists": 
@@ -2537,7 +2544,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 								});
 							break;
 						case "/getfeedmeta": //12/1/14 by DW -- for the list editor, just get the metadata about the feed
-							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+							httpWriteHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							getFeedMetadata (parsedUrl.query.url, function (data) {
 								if (data == undefined) {
 									httpResponse.end ("");    
@@ -2548,7 +2555,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 								});
 							break;
 						case "/readfile": //12/1/14 by DW
-							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+							httpWriteHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpReadUrl (parsedUrl.query.url, function (s) { //xxx
 								if (s == undefined) {
 									httpResponse.end ("");    
@@ -2564,7 +2571,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 						case "/feedupdated": //6/4/15 by DW
 							var challenge = parsedUrl.query.challenge;
 							myConsoleLog ("/feedupdated: challenge == " + challenge);
-							httpResponse.writeHead (200, {"Content-Type": "text/plain"});
+							httpWriteHead (200, {"Content-Type": "text/plain"});
 							httpResponse.end (challenge);    
 							break;
 						case "/renewfeed": //6/14/17 by DW
@@ -2599,7 +2606,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 							break;
 						
 						default: //404 not found
-							httpResponse.writeHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+							httpWriteHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end ("\"" + lowerpath + "\" is not one of the endpoints defined by this server.");
 						}
 					break;
@@ -2638,16 +2645,16 @@ function myConsoleLog (s) { //3/28/17 by DW
 								case "/feedupdated": //6/4/15 by DW
 									var postbody = qs.parse (body);
 									rssCloudFeedUpdated (postbody.url);
-									httpResponse.writeHead (200, {"Content-Type": "text/plain"});
+									httpWriteHead (200, {"Content-Type": "text/plain"});
 									httpResponse.end ("Thanks for the update! :-)");    
 									break;
 								default: //404 not found
-									httpResponse.writeHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+									httpWriteHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 									httpResponse.end ("\"" + lowerpath + "\" is not one of the endpoints defined by this server.");
 								}
 							}
 						else {
-							httpResponse.writeHead (403, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+							httpWriteHead (403, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end ("This feature can only be accessed locally.");    
 							}
 						});
@@ -2708,7 +2715,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 				}
 			}
 		catch (tryError) {
-			httpResponse.writeHead (503, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+			httpWriteHead (503, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 			httpResponse.end (tryError.message);    
 			}
 		}
