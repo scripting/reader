@@ -46,6 +46,7 @@ var config = {
 	flHttpEnabled: true,
 	webSocketPort: 1338,
 	flWebSocketEnabled: true,
+	secureWebSocket: false,
 	
 	dataFolder: "data/",
 	listsFolder: "lists/",
@@ -2215,7 +2216,7 @@ function myConsoleLog (s) { //3/28/17 by DW
 			if (config.webSocketPort !== undefined) { 
 				myConsoleLog ("startWebSocketServer: websockets port is " + config.webSocketPort);
 				try {
-					theWsServer = websocket.createServer (handleWebSocketConnection);
+					theWsServer = websocket.createServer ({secure: config.secureWebSocket}, handleWebSocketConnection);
 					theWsServer.listen (config.webSocketPort);
 					}
 				catch (err) {
