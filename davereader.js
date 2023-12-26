@@ -2820,8 +2820,8 @@ function myConsoleLog (s) { //3/28/17 by DW
 			if (config.flHttpEnabled) {
 				portmsg = ", port: " + config.httpPort;
 				}
-			
-			myConsoleLog ("\n" + myProductName + " v" + myVersion + ": " + now.toLocaleTimeString () + ", " + feedsArray.length + " feeds, " + serverStats.ctFeedReadsThisRun + " reads, " + serverStats.ctStoriesAddedThisRun + " stories, " + ctsockets + portmsg + ".");
+			                                                                                                 
+			myConsoleLog ("\n" + myProductName + " v" + myVersion + ": " + now.toLocaleTimeString () + ", " + feedsArray.length + " feeds, " + serverStats.ctFeedReadsThisRun + " reads, " + serverStats.ctStoriesAddedThisRun + " stor" + (serverStats.ctStoriesAddedThisRun === 1 ? "y, " : "ies, ") + ctsockets + portmsg + ".");
 			}
 		
 		if (config.enabled) {
